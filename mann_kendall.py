@@ -3,6 +3,7 @@ matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import erfinv
+from scipy.special import erf
 import util
 
 # Mann-Kendall test and associated plotting functions
@@ -10,6 +11,7 @@ import util
 
 
 # Mann-Kendall test (precision is the number of decimals)
+# Outputs are the normalized statistic Z and the associated p-value
 def mann_kendall_test(y, prec):
 
     n = len(y)
@@ -38,10 +40,14 @@ def mann_kendall_test(y, prec):
     # Compute standard normal statistic
     z = (s-np.sign(s)) / np.sqrt(max(vs, 1))
 
-    return z
+    # Associated p-value
+    pval = 1 - erf(z / np.sqrt(2))
+
+    return [z, pval]
 
 
 # Same as above, but for whole sample
+# Outputs are the normalized statistic Z and the associated p-value
 def test_sample(sample):
 
     # Local variables
@@ -49,6 +55,7 @@ def test_sample(sample):
     var = sample.shape[1]
     x = np.argsort(sample, axis=0)  # Ranks of the values in the ensemble, for each variable
     mk_res = np.zeros((var, var))
+    pval = np.zeros((var, var))
 
     # MK test results
     for i in range(var):
@@ -56,10 +63,10 @@ def test_sample(sample):
         for j in range(n):
             reorder_sample[j, :] = sample[x[j, i], :]
         for v in np.arange(i+1, var):
-            mk_res[i, v] = mann_kendall_test(reorder_sample[:, v], 5)
-            mk_res[v, i] = mk_res[i, v]
+            [mk_res[i, v], pval[i, v]] = mann_kendall_test(reorder_sample[:, v], 5)
+            [mk_res[v, i], pval[v, i]] = [mk_res[i, v], pval[i, v]]
 
-    return mk_res
+    return [mk_res, pval]
 
 
 # MK cross-test of sample "sample", and plot
@@ -95,12 +102,12 @@ def correlation_plot(sample, var_names):
     return res_mat[:, 0:-1]
 
 
-# Plot the significance of the MK-cross test of sample "sample".
+# Mann-Kendall correlation within sampled values, and plot
 def correlation_significance(sample, var_names):
 
     # Local variables
-    var = sample.shape[1]
-    res_mat = np.zeros((var, var + 1))
+    nvar = len(var_names)
+    res_mat = np.zeros((nvar, nvar + 1))
 
     # Set the thresholdsat +-95%, 99%, and 99.9% significance levels
     sig_levels = [0.9, 0.95, 0.99, 0.999]
