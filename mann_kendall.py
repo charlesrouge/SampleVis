@@ -3,9 +3,11 @@ matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import erfinv
+import util
 
-# Mann-Kendall test and associated useful functions
+# Mann-Kendall test and associated plotting functions
 # In here sampled states are a 2D where each line is an ensemble member and each column is a variable
+
 
 # Mann-Kendall test (precision is the number of decimals)
 def mann_kendall_test(y, prec):
@@ -50,34 +52,14 @@ def test_sample(sample):
 
     # MK test results
     for i in range(var):
-        reorder_lhs = np.zeros((n, var))
+        reorder_sample = np.zeros((n, var))
         for j in range(n):
-            reorder_lhs[j, :] = sample[x[j, i], :]
-        for v in range(var):
-            if v != i:
-                mk_res[i, v] = mann_kendall_test(reorder_lhs[:, v], 5)
+            reorder_sample[j, :] = sample[x[j, i], :]
+        for v in np.arange(i+1, var):
+            mk_res[i, v] = mann_kendall_test(reorder_sample[:, v], 5)
+            mk_res[v, i] = mk_res[i, v]
 
     return mk_res
-
-
-# Re-order time series:
-# columns from csv file incsv
-# txt inputs at directory/file "path"
-# growing values of a parameter (vector x)
-def re_order(path, x):
-
-    # Parameters
-    p = len(x)
-    # Initialize outputs
-    d = np.loadtxt(path+str(x[0])+'.txt', dtype=float, delimiter=',')
-    tab = np.zeros((d.shape[0], p, d.shape[1]))
-
-    # Fill in output matrix
-    for i in range(p):
-        d = np.loadtxt(path + str(x[i]) + '.txt', dtype=float, delimiter=',')
-        tab[:, i, :] = d
-
-    return tab
 
 
 # MK cross-test of sample "sample", and plot
@@ -91,7 +73,7 @@ def correlation_plot(sample, var_names):
     res_mat[:, 0:-1] = test_sample(sample)
 
     # Center the color scale on 0
-    res_mat[0, var] = max(np.amax(res_mat), -np.amin(res_mat))
+    res_mat[0, var] = max(max(np.amax(res_mat), -np.amin(res_mat)), np.sqrt(2)*erfinv(0.95))
     res_mat[1, var] = -res_mat[0, var]
 
     # Plotting MK test results
@@ -113,19 +95,6 @@ def correlation_plot(sample, var_names):
     return res_mat[:, 0:-1]
 
 
-# Discretizes value from tab depending on how they fall on a scale defined by vec
-# Returns binned_tab, with the same shape as tab
-# Example if vec = [0,1], binned_tab[i,j]=0 if tab[i,j]<=0, =1 if 0<tab[i,j]<=1, =2 otherwise
-def binning(tab, vect):
-
-    binned_tab = np.zeros(tab.shape)
-
-    for i in range(len(vect)):
-        binned_tab = binned_tab + 1*(tab > vect[i]*np.ones(tab.shape))
-
-    return binned_tab
-
-
 # Plot the significance of the MK-cross test of sample "sample".
 def correlation_significance(sample, var_names):
 
@@ -140,7 +109,7 @@ def correlation_significance(sample, var_names):
     for i in range(n_sig):
         bin_thresholds.append(np.sqrt(2) * erfinv(sig_levels[i]))
 
-    res_mat[:, 0:-1] = binning(abs(test_sample(sample)), bin_thresholds)
+    res_mat[:, 0:-1] = util.binning(abs(test_sample(sample)), bin_thresholds)
 
     # Set the color scale
     res_mat[0, var] = max(n_sig, np.amax(res_mat))
@@ -160,8 +129,6 @@ def correlation_significance(sample, var_names):
 
     # Plotting MK test results
     plt.imshow(res_mat, extent=[0, var + 1, 0, var], cmap=mycmap)
-
-
 
     # Plot specifications
     ax = plt.gca()
