@@ -1,5 +1,7 @@
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
-import *
+import matplotlib.pyplot as plt
 
 # Discretizes value from tab depending on how they fall on a scale defined by vec
 # Returns binned_tab, with the same shape as tab
@@ -14,28 +16,25 @@ def binning(tab, vect):
     return binned_tab
 
 
-# Get and plot results for within-sample correlation test
-# 1) test results
-# 2) statistical significance
-def correlation_plots(sample, var_names):
+# Get and plot results for within-sample correlation test, based on
+# 1) test results z_test (Figure 1)
+# 2) statistical significance pval (Figure 2)
+# other inputs are the test_name and var_names
+def correlation_plots(z_test, p_val, test_name, var_names):
 
     # Local variables
     nvar = len(var_names)
-
-
-    # Pearson test results
-    [rho, pval] = test_sample(sample)
-    pval = 1 - (pval + np.matlib.eye(nvar))  # Transformation convenient for plotting below
+    pval = 1 - (p_val + np.matlib.eye(nvar))  # Transformation convenient for plotting below
 
     ###################################################
     # Figure 1: correlations
 
     # Matrix to plot
     res_mat = np.zeros((nvar, nvar + 1))
-    res_mat[:, 0:-1] = rho
+    res_mat[:, 0:-1] = z_test
 
     # Center the color scale on 0
-    res_mat[0, nvar] = max(np.amax(rho), -np.amin(rho))
+    res_mat[0, nvar] = max(np.amax(z_test), -np.amin(z_test))
     res_mat[1, nvar] = -res_mat[0, nvar]
 
     # Plotting Pearson test results
@@ -51,7 +50,8 @@ def correlation_plots(sample, var_names):
     ax.set_yticklabels(var_names[::-1])
     plt.title('Rank correlation between variables\' sampled values', size=13, y=1.07)
     plt.colorbar()
-    plt.savefig('Pearson_cross_correlation.png')
+    plt.savefig(test_name + '_cross_correlation.png')
+
     plt.clf()
 
     ###################################################
@@ -63,7 +63,7 @@ def correlation_plots(sample, var_names):
     # Set the thresholds at +-95%, 99%, and 99.9% significance levels
     bin_thresholds = [0.9, 0.95, 0.99, 0.999]
     n_sig = len(bin_thresholds)
-    res_mat[:, 0:-1] = util.binning(pval, bin_thresholds)
+    res_mat[:, 0:-1] = binning(pval, bin_thresholds)
 
     # Set the color scale
     res_mat[0, nvar] = n_sig
@@ -99,7 +99,7 @@ def correlation_plots(sample, var_names):
     for i in range(n_sig):
         cb_labels.append(str(bin_thresholds[i] * 100) + '%')
     colorbar.set_ticklabels(cb_labels)
-    plt.savefig('Pearson_significance.png')
+    plt.savefig(test_name + '_significance.png')
     plt.clf()
 
-    return [rho, pval]
+    return None
