@@ -3,17 +3,15 @@ import matplotlib.pyplot as plt
 import util
 
 
+# Assess the uniformity of each 1D projection of the sample
 # Assumes bounds of sample are [0,1]**n
 def projection_1D(sample, var_names):
 
     [n, dim] = sample.shape
-    # bounds = [[0, 1]]*n
     y = np.zeros(sample.shape)
 
     z_int = np.linspace(0, 1, num=n + 1)
     binned_sample = util.binning(sample, z_int)
-
-    # for d in range(dim):
 
     for i in range(n):
         y[i, :] = 1*(np.sum(1*(binned_sample == i+1), axis=0) > 0)
@@ -27,7 +25,8 @@ def projection_1D(sample, var_names):
     plt.savefig('1D_coverage_index.png')
     plt.clf()
 
-    return proj
+    # Return a single index: the average of values for all the variables
+    return np.mean(proj)
 
 
 # Plots the sample projected on each 2D plane
