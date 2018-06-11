@@ -1,10 +1,5 @@
-import matplotlib
-matplotlib.use('Agg')
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.special import erfinv
 from scipy.stats import pearsonr
-import util
 
 # Correlation Pearson test for whole sample. Outputs are:
 # the Pearson statistic rho
@@ -16,7 +11,7 @@ def test_sample(sample):
     rho = np.zeros((var, var))
     pval = np.zeros((var, var))
 
-    # MK test results
+    # Pearson test results
     for i in range(var):
         for v in np.arange(i+1, var):
             [rho[i, v], pval[i, v]] = pearsonr(sample[:, i], sample[:, v])

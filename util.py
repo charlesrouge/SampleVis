@@ -1,7 +1,6 @@
-import matplotlib
-matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 # Discretizes value from tab depending on how they fall on a scale defined by vec
 # Returns binned_tab, with the same shape as tab
@@ -103,3 +102,25 @@ def correlation_plots(z_test, p_val, test_name, var_names):
     plt.clf()
 
     return None
+
+
+# Rescales the sample space into the unit hypercube, bounds = [0,1]
+def scale_normalized(sample, bounds):
+
+    scaled_sample = np.zeros(sample.shape)
+
+    for j in range(sample.shape[1]):
+        scaled_sample[:, j] = (sample[:, j] - bounds[j][0]) / (bounds[j][1] - bounds[j][0])
+
+    return scaled_sample
+
+
+# Rescales a sample defined in the unit hypercube, to its bounds
+def scale_to_bounds(scaled_sample, bounds):
+
+    sample = np.zeros(scaled_sample.shape)
+
+    for j in range(sample.shape[1]):
+        sample[:, j] = scaled_sample[:, j] * (bounds[j][1] - bounds[j][0]) + bounds[j][0]
+
+    return sample
